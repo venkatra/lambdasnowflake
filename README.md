@@ -19,7 +19,7 @@ for the compute time you consume - there is no charge when your code is not runn
  
 This write-up is about how to code a simple AWS Lambda function that communicates with SnowFlake. It demonstrates a working
 example and things to consider.explains  and points to consider. The code is present in the GitHub - 
-![lambdasnowflake](https://github.com/venkatra/lambdasnowflake).
+[lambdasnowflake](https://github.com/venkatra/lambdasnowflake).
   
 ### Scenario
   Typically when loading data into snowflake the preferred approach is to collect large amount of data into an s3 bucket 
@@ -61,7 +61,7 @@ example and things to consider.explains  and points to consider. The code is pre
  - Private key passphrase
  - Private key file content
  
- ![screenshot - secrets_manager_key](/Users/d3vl0p3r/Dev/ws_git/lambdasnowflake/img/secrets_manager_key.png?raw=true "Title")
+ ![screenshot - secrets_manager_key](./img/secrets_manager_key.png?raw=true "screenshot - secrets_manager_key")
  
  At run-time, a quick api call to this specific key would return the entire record as a json data. The program could 
  parse the json and go about authenticating with snowflake. The code for this is demonstrated in the trait class 
@@ -119,7 +119,7 @@ example and things to consider.explains  and points to consider. The code is pre
   you, with those frequent uploads. I recommend developing using the [AWS SAM CLI](https://github.com/awslabs/aws-sam-cli) 
    tool. By using this I could test locally and also deploy it to AWS Cloud Formation. The template to use for local 
   testing [local_samcli.yaml](./KijijiLoaderLambda/local_samcli.yaml) and when deploying to AWS use the template 
-  ![deploy.yaml](./aws/deploy.yaml).
+  [deploy.yaml](./aws/deploy.yaml).
 
 ###### Policies
  For proper functioning the lambda function needs the following policies:
@@ -128,14 +128,14 @@ example and things to consider.explains  and points to consider. The code is pre
  - Lambda basic execution
  Being lazy, for this demo, I used the existing pre-defined managed policies as below.
  
- [aws-lambda-policy-role.png](./img/aws-lambda-policy-role.png)
+ ![aws-lambda-policy-role.png](./img/aws-lambda-policy-role.png?raw=true "aws-lambda-policy-role")
  
  just ignore the SNS from the definition; it was used for some other demo.
 
 ##### Observations
  Here is the screenshot from the monitoring after this lambda ran for a couple of hours :
  
- [KijijiLoader-Lambda-Monitoring.png](./img/KijijiLoader-Lambda-Monitoring.png)
+ ![KijijiLoader-Lambda-Monitoring.png](./img/KijijiLoader-Lambda-Monitoring.png?raw=true "KijijiLoader-Lambda-Monitoring")
 
  The lambda gets triggered every 5 minutes, and each invocation is typically 3 seconds in duration.
 
@@ -145,13 +145,14 @@ example and things to consider.explains  and points to consider. The code is pre
  
 ###### initialization
  From the cloud watch extract log 
- [cloud-watch-log](./img/cloud-watch-log.png); 
+ ![cloud-watch-log](./img/cloud-watch-log.png?raw=true "cloud-watch-log"); 
  You can confirm that initialization happened only once but normal function which writes to snowflake happens regardless.
  This demonstrates that AWS tends to re-use the lambda container between execution
  
 ###### Gotchas
  You might be wondering; whats the big spike around 11:00 how come execution time went up; Well that’s the perils of budget. 
- I ran out of my snowflake credits. [credit-maxed-out](./img/credit-maxed-out.png).
+ I ran out of my snowflake credits. 
+ ![credit-maxed-out](./img/credit-maxed-out.png?raw=true "credit-maxed-out")
  
  This does demonstrate that when you are designing for such mini batch dataload, consider the cost. If in your situation, 
  you can delay the loading to a later time (like every hour) and if there is a possibility to store the data (like in a 
