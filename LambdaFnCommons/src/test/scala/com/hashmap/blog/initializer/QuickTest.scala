@@ -19,10 +19,10 @@ object QuickTest extends App {
   val AWS_REGION = "us-east-2"
   val OCSP_CACHE_DIR = "/tmp"
 
-  System.setProperty("AWS_DEFAULT_REGION","us-east-1")
-  System.setProperty("AWS_PROFILE","lambda_dev")
-  System.setProperty("aws.accessKeyId","AKIAJU6NPKJUVIYQANCA")
-  System.setProperty("aws.secretKey","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")
+  System.setProperty("AWS_DEFAULT_REGION","<<TO FILL HERE>>")
+  System.setProperty("AWS_PROFILE","<<TO FILL HERE>>")
+  System.setProperty("aws.accessKeyId","<<TO FILL HERE>>")
+  System.setProperty("aws.secretKey","<<TO FILL HERE>>")
 
   val dbConnHelper :DBConnPoolInitializer = new DBpoolInitializer
   dbConnHelper.initializeConfigurationToDB(AWS_SECRET_SNWFLK_KEY ,AWS_REGION ,OCSP_CACHE_DIR)
