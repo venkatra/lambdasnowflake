@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <parent>
+    <artifactId>lambdasnowflake</artifactId>
+    <groupId>com.hashmap.blog</groupId>
+    <version>1.0.0</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>LambdaFnCommons</artifactId>
+  <dependencies>
+    <dependency>
+      <groupId>org.scalatest</groupId>
+      <artifactId>scalatest_2.11</artifactId>
+      <version>3.0.5</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>scalactic_2.11</artifactId>
+          <groupId>org.scalactic</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>scala-xml_2.11</artifactId>
+          <groupId>org.scala-lang.modules</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+  </dependencies>
+  <properties>
+    <hikaricp.version>3.2.0</hikaricp.version>
+  </properties>
+</project>
+

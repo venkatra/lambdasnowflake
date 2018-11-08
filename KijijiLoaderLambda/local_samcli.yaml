@@ -1,0 +1,14 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description:
+  Used for retrieving ticker prices from Bloomberg Services
+
+Resources:
+  KijijiLoaderFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: target/KijijiLoaderLambda-1.0.0.jar
+      Handler: 'com.hashmap.blog.loader.KijijiLoaderFn::handle'
+      Runtime: java8
+      Timeout: 900
+      Role: 'arn:aws:iam::467253530030:role/lambda-funct-poc-role'

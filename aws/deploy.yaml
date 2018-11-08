@@ -1,0 +1,26 @@
+####################################
+# SAM template for deployment to AWS.
+#
+####################################
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description:
+  Demonstration of AWS Lambda functions communicating with snowflake
+
+Resources:
+  KijijiLoaderFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description : Used for loading Kijiji ads into snowflake
+      CodeUri: s3://hmap-lambdasnowflake-east1/code/KijijiLoaderLambda-1.0.0.jar
+      Handler: 'com.hashmap.blog.loader.KijijiLoaderFn::handle'
+      Runtime: java8
+      Role: 'arn:aws:iam::467253530030:role/lambda-funct-poc-role'
+      ReservedConcurrentExecutions: 5
+      Timeout: 300
+      MemorySize: 512
+      Events:
+        KijijiRssRetrievalScheduleTrigger:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
