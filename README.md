@@ -1,4 +1,4 @@
-# Interfacing to snowflake from was lambda
+# Interfacing to snowflake from AWS lambda
 
 ## SNOWFLAKE DATA WAREHOUSE
 
