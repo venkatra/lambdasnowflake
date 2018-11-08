@@ -18,24 +18,23 @@ and much more
 for the compute time you consume - there is no charge when your code is not running. 
  
 This write-up is about how to code a simple AWS Lambda function that communicates with SnowFlake. It demonstrates a working
-example and things to consider.explains  and points to consider. The code is present in the GitHub - 
+example and reflects on points to consider. The code is present in the GitHub - 
 [lambdasnowflake](https://github.com/venkatra/lambdasnowflake).
   
 ### Scenario
-  Typically when loading data into snowflake the preferred approach is to collect large amount of data into an s3 bucket 
+  Typically when loading data into snowflake the preferred approach is to collect large amount of data ex: into an s3 bucket 
   and load (example via `COPY` command). This is also true to extent of loading mini batched streaming data in the 
   size of atleast 100mb. Blog list:
   - [Blog - Part1](https://www.snowflake.com/blog/designing-big-data-stream-ingestion-architectures-using-snowflake-part-1/)
   - [Blog - Part2](https://www.snowflake.com/blog/designing-data-stream-ingestion-architectures-using-snowflake-part-ii/)
    
-   There are some scenarios where data obtained is very smaller in size or no of records is less (like less than 1000 
-   records). In these case a direct write operation seems a better approach. This code writeup is a demonstration of 
+   There are some scenarios where data obtained is very smaller in size or record counts is less (like less than 1000 
+   records), in these case a direct write operation seems a better approach. This code writeup is a demonstration of 
    one such hypothetical scenario.
 
 #### Kijiji
- [Kijiji](https://www.kijiji.ca/) ,here in Canada, which provides a social platform to buy and sell stuffs. This is somewhat 
- similar to well known craigslist. It offers a RSS feed of the ads which can be retrieved ex [Kijiji-rss](https://www.kijiji.ca/rss-srp/l0),
- shows ads across canada and across all ad category. Typically on each retrieval you get around 20 or so records.
+ [Kijiji](https://www.kijiji.ca/) ,here in Canada, is a social platform to buy and sell stuffs. This is somewhat 
+ similar to well known craigslist. It offers a RSS feed of the ads posted, an ex [Kijiji-rss-link](https://www.kijiji.ca/rss-srp/l0), shows ads across canada and across all ad category. Typically on each retrieval you get around 20 or so records. The feed does gets updated frequently. 
  
  For this write up the AWS Lambda function retrieves the feed ,parses the content ,extracts some information and stores 
  the data into snowflake. 
@@ -51,7 +50,7 @@ example and things to consider.explains  and points to consider. The code is pre
 
  In a normal execution environment, the private key is stored up in a secure location and the program would access from 
  the path. In a lambda environment, since the container is dynamic, a regular file location can not be provided. One 
- possible way to overcome this is by having the program load the private key file from specific protected S3 bucket. 
+ possible way to overcome this is by having the function load the private key file from specific protected S3 bucket. 
 
 ###### AWS secret manager
  A better approach is by using the [AWS SECRETS MANAGER](https://aws.amazon.com/secrets-manager/). We could store all 
@@ -68,56 +67,38 @@ example and things to consider.explains  and points to consider. The code is pre
  [DBConnPoolInitializer](./LambdaFnCommons/src/main/scala/com/hashmap/blog/lambda/initializer/DBConnPoolInitializer.scala)
  method ```retrieveDBConnInfo``` and to parse the json in method ```parseDBSecretInfo```. 
 
- _NOTE:_ Though here in the code it is hardcoded; but in actual functioning logic; i would recomend retrieving the `awsSecretSnowflakeKey`
- via an environment variable. The environment variable can be defined as part of the deployment process. 
+ _NOTE:_ Though here in the code it is hardcoded; but in actual functioning logic; i would recomend retrieving the `awsSecretSnowflakeKey` via an environment variable. The environment variable can be defined as part of the deployment process. 
 
 ###### Connection pool
- The code instantiates and setups a connection pool, via the well know library [HikariCP](https://github.com/brettwooldridge/HikariCP).
- The common adopted pattern of connecting to a data source using the user/password works; however there is currently no 
- implementation for creating a data source using keypair methodology mentioned above.
+ The code instantiates and setups a connection pool, via the well know library [HikariCP](https://github.com/brettwooldridge/HikariCP). The common adopted pattern of connecting to a data source using the user/password works; however there is currently no implementation for connecting to a data source using keypair methodology mentioned above.
 
  To overcome this; I created a simple implementation which can be configured in Hikari CP. The datasource implementation 
- is the class [SnowflakeKeypairDataSource](./LambdaFnCommons/src/main/scala/com/hashmap/blog/lambda/initializer/SnowflakeKeypairDataSource.scala)
- . The parsing the private keypair and connecting is present in the methods ```getEncryptedPrivateKey``` and ```getConnection```.
- Configuring the Hikari library is in the class [DBConnPoolInitializer](./LambdaFnCommons/src/main/scala/com/hashmap/blog/lambda/initializer/DBConnPoolInitializer.scala)
- on the method ```instantiateDataSource```.
+ is the class [SnowflakeKeypairDataSource](./LambdaFnCommons/src/main/scala/com/hashmap/blog/lambda/initializer/SnowflakeKeypairDataSource.scala). The parsing of the private keypair and connecting is present in the methods ```getEncryptedPrivateKey``` and ```getConnection```. Configuring the Hikari library is in the class [DBConnPoolInitializer](./LambdaFnCommons/src/main/scala/com/hashmap/blog/lambda/initializer/DBConnPoolInitializer.scala) on the method ```instantiateDataSource```.
  
 ###### Lambda startup 
- The lambda execution happens randomly and there is no control on how a lambda execution container gets allocated. There
- are no licycle events to indicate to your application code that the container is initialized. By the time your lambda 
- function executes the container is already initialized.The [article](https://read.acloud.guru/how-long-does-aws-lambda-keep-your-idle-functions-around-before-a-cold-start-bf715d3b810) 
- from Yan Cui provided a good explanation when i initially ventured out.  
+ The lambda execution happens randomly and there is no control on how a lambda execution container gets allocated. There are no licycle events to indicate to your application code that the container is initialized. By the time your lambda function executes the container is already initialized.The [article](https://read.acloud.guru/how-long-does-aws-lambda-keep-your-idle-functions-around-before-a-cold-start-bf715d3b810) from Yan Cui provided a good explanation when i initially ventured out.  
  
- In such a condition, creating and maintaining a connection pool would be un-deterministic; However, its well demonstrated
- by other that AWS tries to reuse an existing lambda container, if there are frequent invocations. Hence implementing a 
- static block in the lambda class provides a good spot for such one time initialization. I adopted this approach and
- is done via the object class [ContainerInitializer](./KijijiLoaderLambda/src/main/scala/com/hashmap/blog/initializer/ContainerInitializer.scala).
- The class gets instantiated as part of the main class [KijijiLoaderFn](./KijijiLoaderLambda/src/main/scala/com/hashmap/blog/loader/KijijiLoaderFn.scala).
+ In such a condition, creating and maintaining a connection pool would be un-deterministic; However, its well demonstrated by other that AWS tries to reuse an existing lambda container, if there are frequent invocations. Hence implementing a static block in the lambda class provides a good spot for such one time initialization. I adopted this approach and is done via the object class [ContainerInitializer (./KijijiLoaderLambda/src/main/scala/com/hashmap/blog/initializer/ContainerInitializer.scala). The class gets instantiated as part of the main class [KijijiLoaderFn](./KijijiLoaderLambda/src/main/scala/com/hashmap/blog/loader/KijijiLoaderFn.scala).
  
  __*NOTE:*__ Do not use this approach to store application states, as the container could be destroyed at any random point
  by AWS.
  
 ###### The '/tmp' folder
  As part of communicating with snowflake, for ideal performance you would need to set a folder for snowflake to store cache.
- For this, we could use the '/tmp' folder from the lambda execution environment. Hence we set the environment variables
- to this folder during runtime, as demonstrated in [DBConnPoolInitializer](./LambdaFnCommons/src/main/scala/com/hashmap/blog/lambda/initializer/DBConnPoolInitializer.scala)
-  method ```initializeConfigurationToDB```.
+ For this, we could use the '/tmp' folder from the lambda execution environment. Hence we set the environment variables to this folder during runtime, as demonstrated in [DBConnPoolInitializer](./LambdaFnCommons/src/main/scala/com/hashmap/blog/lambda/initializer/DBConnPoolInitializer.scala) method ```initializeConfigurationToDB```.
   
-  __*NOTE:*__ Though it is ok with limitation to use the `/tmp` folder; However I generally would avoid misusing the folder 
-  to store large amount of processing data, as the storage size is very limit (currently at 512 MB) and could change.
+  __*NOTE:*__ Though it is ok with limitation to use the `/tmp` folder; However I generally would avoid misusing the folder to store large amount of processing data, as the storage size is very limit (currently at 512 MB) and could change.
 
 ###### Execution Time limits
- Currently an AWS Lambda function can run to max of 15 minutes, knowledge of such should be considered when implementing
- the function. These ar documented [here](https://docs.aws.amazon.com/lambda/latest/dg/limits.html).
+ Currently an AWS Lambda function can run to max of 15 minutes, knowledge of such limits should be considered when implementing the function. The limits are documented [here, follow the link](https://docs.aws.amazon.com/lambda/latest/dg/limits.html). This code however executes at an average of 3-5 secs; well below this limit.
  
- This code however executes at an average of 3 secs; well below this limit.
  __*NOTE:*__ The functionality demonstrated here does not mean the lambda is slow (comparitive to certain use cases); SLA
  was not a consideration, the functionality is merely demonstration of connecting to snowflake from lambda. 
  
 ###### AWS SAM and AWS SAM CLI
   When developing it is usually a pain to build the code ,deploy to aws and run. It’s time consuming and also could cost 
   you, with those frequent uploads. I recommend developing using the [AWS SAM CLI](https://github.com/awslabs/aws-sam-cli) 
-   tool. By using this I could test locally and also deploy it to AWS Cloud Formation. The template to use for local 
+  tool. By using this I could test locally and also deploy it to AWS Cloud Formation. The template to use for local 
   testing [local_samcli.yaml](./KijijiLoaderLambda/local_samcli.yaml) and when deploying to AWS use the template 
   [deploy.yaml](./aws/deploy.yaml).
 
@@ -169,4 +150,4 @@ example and things to consider.explains  and points to consider. The code is pre
  considerations to when adopting. We have developed AWS Lambda in python also communicating with snowflake and doing simillar
  functionality at our client engagements too.
  
- If you liked this write-up please :+1: it.
+ Share this blog, If you :+1: it.
