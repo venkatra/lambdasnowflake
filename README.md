@@ -61,7 +61,7 @@ example and things to consider.explains  and points to consider. The code is pre
  - Private key passphrase
  - Private key file content
  
- [screenshot - secrets_manager_key](/Users/d3vl0p3r/Dev/ws_git/lambdasnowflake/img/secrets_manager_key.png)
+ ![screenshot - secrets_manager_key](/Users/d3vl0p3r/Dev/ws_git/lambdasnowflake/img/secrets_manager_key.png?raw=true "Title")
  
  At run-time, a quick api call to this specific key would return the entire record as a json data. The program could 
  parse the json and go about authenticating with snowflake. The code for this is demonstrated in the trait class 
